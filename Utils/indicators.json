@@ -1,0 +1,51 @@
+[
+    {
+        "name": "Breakout MT5",
+        "caption": "Bozorda eng katta foydali harakatlar odatda yorilish nuqtalarida (breakout) boshlanadi.\nKo‘pchilik treyderlar bu imkoniyatni o‘tkazib yuboradi, chunki darajalarni vaqtida ko‘ra olmaydi.\nAslida u pullik va professional treyderlar orasida keng qo‘llaniladi, ammo siz uchun maxsus bonus sifatida taqdim etilyapti.\n\n💡 Breakout indikator nimaga foydali?\n\n🔎 Muhim support/resistance darajalarni avtomatik chizadi\n🚀 Yorilish sodir bo‘lganda aniq signal beradi\n⏱️ Sizni kechikmasdan pozitsiyaga kiritadi\n📊 Strategiyani yanada intizomli va barqaror qiladi\n\n📌 Tavsiyanoma:\nBreakout indikatorini avval demo hisobda sinab ko‘ring, so‘ngra real balansga o‘ting. FATH bilan kombinatsiya qilsangiz, sizga uzoq muddatli ustunlik beradi.",
+        "image": "AgACAgIAAxkBAAIF-GjjbjEO5JGJZitp22_yQZrfS5dyAAJhBjIb37YZS6K9vOLh51joAQADAgADbQADNgQ",
+        "file_id": "BQACAgIAAxkBAAIGWmjjcTGXEEzpvdhVzs5bH3BMYbJJAALNiwAC37YZSx0JotkMcnPgNgQ",
+        "file_name": "breakout-zones-indicator.ex5"
+    },
+    {
+        "name": "Shved_SupplyAndDemand",
+        "caption": "Fraktallar va ATR (Average True Range) indikatorlariga asoslangan bu vosita MT5 narxlar jadvalidagi qo‘llab-quvvatlash va qarshilik zonalarini avtomatik tarzda aniqlaydi va chizadi.\n\nBu indikator orqali siz zonalarning kuchini baholashingiz va trend davomiyligini tahlil qilishingiz mumkin.\n\n🧭 Zonalar turlari:\n▪️ Zaif — Trenddagi muhim yuqori va past nuqtalar.\n▪️ Sinovdan o‘tmagan — Narx hali tegmagan asosiy burilish zonalari.\n▪️ Tasdiqlangan — Kuchli zonalar; narx ilgari ularga ta’sir qilgan, lekin buzolmagan.\n▪️ Isbotlangan — Kamida 4 marta sinovdan o‘tgan, narxni to‘xtata olgan zonalar.\n▪️ Buzilgan — Narx tomonidan yorib o‘tilgan (zaif zonalarga tatbiq etilmaydi).\n\n💡 Natija: indikator sizga trend yo‘nalishini aniq ko‘rsatadi va tahlilni soddalashtiradi.",
+        "image": "AgACAgIAAxkBAAIGl2jjdOragTR1IUElMHyXw8rp1ns9AAKUBjIb37YZS-mcaa7zD1vhAQADAgADeAADNgQ",
+        "file_id": "BQACAgIAAxkBAAIGmWjjdPGCLE0zkDAQB_OaBupnafRIAAILjAAC37YZSyml1MLZ5xh4NgQ",
+        "file_name": "shved_supply_and_demand_v1.2.ex5"
+    },
+    {
+        "name": "PuntersFX",
+        "caption": "Bu oddiy indikator emas — bu bir nechta premium indikatorlardan tashkil topgan butun boshli professional savdo tizimi.\nU aslida rasmiy fxpunters.co.za\n saytida juda yuqori narxda sotiladi, ammo bizning obunachilar uchun mutlaqo bepul taqdim etilmoqda! 💎\n\n💾 O‘rnatish uchun:\n1️⃣ .zip faylni oching\n2️⃣ Undagi barcha fayllarni MQL5 > Indicators papkasiga joylang\n3️⃣ MetaTrader 5 dasturini qayta ishga tushiring\n4️⃣ Va endi professional treyderlar kabi savdo qiling! 🚀\n\n🧠 Bu tizim sizga trend yo‘nalishini, kirish/chiqish nuqtalarini va bozor impulslarini aniq ko‘rsatib beradi.\n🎯 Har bir indikator bir-birini to‘ldiradi — natijada kuchli va ishonchli savdo signallari hosil bo‘ladi.",
+        "image": "AgACAgIAAxkBAAIGyGjje4V5yQwVNgiWvxUJgDfkSuPiAALMBjIb37YZS42C8ODg0rtEAQADAgADbQADNgQ",
+        "file_id": "BQACAgIAAxkBAAIG32jjfaRBUve4mE1EzPs_-jG9R2_NAALChAAC37YhS4F1MXgdBWPQNgQ",
+        "file_name": "PUNTERS.zip"
+    },
+    {
+        "name": "FXLAB 2.0",
+        "caption": "🎯 FX LAB 2.0 — Yangi Avlod Forex Indikatori\n\n📊 MetaTrader 4 uchun ilg‘or savdo tizimi\nFX LAB 2.0 — bu scalping 🕐, kunlik savdo 📅 va swing savdo 📈 strategiyalarini qo‘llab-quvvatlash uchun yaratilgan aqlli indikator.\n\n⚙️ Asosiy afzalliklari:\n✅ Aqlli algoritmlar yordamida aniq kirish va chiqish nuqtalarini aniqlaydi\n✅ Unikal signal tizimi bilan bozor o‘zgarishlarini tezda ko‘rsatadi\n✅ Intuitiv boshqaruv paneli orqali savdo jarayonini oson boshqarish\n✅ Oldindan belgilangan Take Profit va hisoblangan Stop Loss darajalari\n✅ Yangi boshlovchilar ham, tajribali treyderlar ham uchun ideal vosita\n\n🚀 FX LAB 2.0 — sizga bozorni nafaqat kuzatish, balki uni oldindan his qilish imkonini beradi.\n💡 Savdoda aniqlik — bu muvaffaqiyatning kaliti!",
+        "image": "AgACAgIAAxkBAAIG_2jjqZF-TebHKUYnWSunf0ugKibLAAI0_DEb37YhS_UV3G5RVUEXAQADAgADbQADNgQ",
+        "file_id": "BQACAgIAAxkBAAIHAWjjqZwfxU9P-3apafQonRFEXY2oAAKohwAC37YhS9xrWrqM2Hx2NgQ",
+        "file_name": "fxlab.zip"
+    },
+    {
+        "name": "SMC",
+        "caption": "🧠 Smart Money Concepts (SMC) — yangi avlod indikator!\n\nBozorni yirik investorlar kabi tahlil qiling 🔍\nEndi har bir Order Block, Liquidity Zone, FVG yoki BOS ni qo‘lda chizish shart emas — hammasini bu indikator avtomatik aniqlaydi! ⚙️\n\n📈 Asosiy imkoniyatlar:\nOrder Block’larni aniqlash (Bullish / Bearish)\nLikvidlik darajalarini avtomatik ko‘rsatish (Buy Side / Sell Side)\nFair Value Gap (FVG) zonalarini aniqlash va bo‘yash\nBozor strukturasi (BOS & CHoCH) belgilari\nTrend chiziqlari va burchak tahlili\n\n📥 O‘rnatish:\nTradingView → Pine Editor → kodni joylashtiring → “Add to Chart” bosing.",
+        "image": "AgACAgIAAxkBAAIHEmjjvxvuQCrDIoMJBCCsas41x6kYAALp_DEb37YhS43JNAgGL2MYAQADAgADbQADNgQ",
+        "file_id": "BQACAgIAAxkBAAIHFGjjvyPpfmLMTsGEusoiyCqgCBCGAAJpiQAC37YhSxfWwdtFnBN1NgQ",
+        "file_name": "smc.zip"
+    },
+    {
+        "name": "FXVECTOR MT4",
+        "caption": "🚀 FXVECTOR – universal indikator tizimi!\n\nEndi siz har qanday aktivda ishlashingiz mumkin:\n💱 Forex juftliklari\n💰 Kriptovalyutalar\n🥇 Qimmatbaho metallar\n\n🕒 1 daqiqadan 1 oylikkacha istalgan vaqt oralig‘ida ishlaydi \n\n⚙️ 2 ta rejim siz uchun:\n🔹 Oddiy – balansli, xavfsiz signallar (kunlik & swing savdo uchun)\n🔹 Tez – ilg‘orlar uchun, skalping va tez savdolar uchun ideal ⚡️\n\n📊 Tajribangiz muhim emas!\nBoshlovchi bo‘lsangiz ham, FXVECTOR sizga professional natijalarni beradi.",
+        "image": "AgACAgIAAxkBAAIHxGjmNiDh9qYMofFE5jCSqzr2BZyNAAL0-jEbvt0wS8-MZpeODNHKAQADAgADeQADNgQ",
+        "file_id": "BQACAgIAAxkBAAIHxmjmNkVbPwPkF4qJua4sp4vvNr_4AAKlfgACvt0wS0OiAmpzu4ZgNgQ",
+        "file_name": "FXVECTOR.zip"
+    },
+    {
+        "name": "Crash Killer",
+        "caption": "⚡️ CRASH KILLER  — yangi indikator taqdim etildi!\n\n🎯 Deriv’dagi Crash indekslarida (Crash 1000, Crash 500, Crash 300) ishlovchi kuchli spike signal indikatori \n\nBu indikator spike (keskin qulash) sodir bo‘lishidan oldin ogohlantiruvchi signal beradi.\n\n📊 Asosiy funksiyalar:\n\n✅ Spike’larni oldindan aniqlaydi \n✅ Har bir signal grafikda strelka (arrow) ko‘rinishida chiqadi\n✅ Bildirishnomalar (notification):\n✅Mobil telefonga push ogohlantirish\n✅ MT5 uchun to‘liq mos\n✅ Crash 1000 / 500 / 300 indekslarida ishlaydi\n✅ Arxiv ichida ornatish qollanmasi bor",
+        "image": "AgACAgIAAxkBAAIJa2jncTmUKzu72qnbgKN6ayeZjqo4AAK1_zEbvt04SxV4CkQwPv3DAQADAgADeQADNgQ",
+        "file_id": "BQACAgIAAxkBAAIJnGjndJ_K2Jlnqj_jLZWg-YaT4C-qAAIKigACvt04S7iz9fBSqqgPNgQ",
+        "file_name": "crashkiller.zip"
+    }
+]

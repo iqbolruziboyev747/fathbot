@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Firebase
+firebase_credentials.json
+.firebase/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bot specific
+analyses/
+pro_analyses/
+*.zip
+*.ex5
+*.mq5
+*.mp4
+*.pdf
+*.jpg
+*.png
+
+# Environment
+.env
+.env.local
+railway.env
+
+# Old versions
+FATH_1.5/
+fath1.2/
+fath1.3/
+fath1.4/
+1/
+
+# Temporary
+*.tmp
+temp/
+
