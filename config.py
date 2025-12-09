@@ -20,29 +20,10 @@ PAYME_CASH_KEY = "7277b092acc00e445efbca012f67f0e9d755e7f936291681bfd90d36e35ec0
 # 📢 KANAL ID (agar kerak bo'lsa)
 CHANNEL_ID = -1002934293554
 
-# 🗄️ DATABASE PATHS (Legacy SQLite - Firestore ga o'tkazilganda ishlatilmaydi)
+# 🗄️ DATABASE PATHS
 TRADING_DB_PATH = "database/trading_bot.db"
 LICENSE_DB_PATH = "database/licenses.db"
 REFERRAL_DB_PATH = "database/referrals.db"
-
-# 🔥 FIREBASE FIRESTORE SOZLAMALARI
-# Firebase credentials JSON fayl yo'li (serviceAccountKey.json)
-FIREBASE_CREDENTIALS_PATH = "firebase_credentials.json"
-
-# Firestore Collections nomlari
-FIRESTORE_COLLECTIONS = {
-    "users": "users",
-    "analyses": "analyses",
-    "economic_data": "economic_data",
-    "insider_news": "insider_news",
-    "licenses": "licenses",
-    "pricing_plans": "pricing_plans",
-    "referrals": "referrals",
-    "referral_codes": "referral_codes"
-}
-
-# Firestore ishlatish (True bo'lsa Firestore, False bo'lsa SQLite)
-USE_FIRESTORE = True
 
 # 📁 FILE PATHS
 STRATEGIES_FILE = "strategies.json"

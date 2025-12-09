@@ -22,7 +22,6 @@ from services.database_service import license_db
 from services.vip_sync_service import vip_sync
 from services.referral_service import referral_service
 from services.pdf_service import create_license_pdf
-from services.helpers import get_plan_attr
 import time
 
 
@@ -160,8 +159,7 @@ async def process_plan(message: types.Message, state: FSMContext):
     selected_plan = None
     
     for plan in plans:
-        plan_name = get_plan_attr(plan, 'name', '')
-        if plan_name in text:
+        if plan.name in text:
             selected_plan = plan
             break
     
@@ -170,8 +168,7 @@ async def process_plan(message: types.Message, state: FSMContext):
         return
     
     # Agar TRIAL bo'lsa - admin beradi
-    selected_plan_code = get_plan_attr(selected_plan, 'plan_code', '')
-    if selected_plan_code == "trial":
+    if selected_plan.plan_code == "trial":
         await state.finish()
         await message.answer(
             "ℹ️ *TRIAL litsenziya faqat admin tomonidan beriladi.*\n\n"
@@ -184,22 +181,19 @@ async def process_plan(message: types.Message, state: FSMContext):
     
     # Referral chegirmasini hisoblash
     ref_count = referral_service.get_referral_count(user_id)
-    base_price = get_plan_attr(selected_plan, 'price', 0)
+    base_price = selected_plan.price
     final_price, discount_percent = referral_service.apply_discount(user_id, base_price)
     
     # To'lov invoice
     amount_tiyin = final_price * 100
-    payload = f"license_{user_id}_{account}_{selected_plan_code}_{int(time.time())}"
+    payload = f"license_{user_id}_{account}_{selected_plan.plan_code}_{int(time.time())}"
     
-    selected_plan_name = get_plan_attr(selected_plan, 'name', 'Noma\'lum')
-    selected_plan_days = get_plan_attr(selected_plan, 'days', 0)
-    
-    description = f"{selected_plan_name} (Account: {account})"
+    description = f"{selected_plan.name} (Account: {account})"
     if discount_percent > 0:
         description += f" - {discount_percent}% chegirma (referrals: {ref_count})"
     
     prices = [LabeledPrice(
-        label=f"{selected_plan_name} ({selected_plan_days} kun)",
+        label=f"{selected_plan.name} ({selected_plan.days} kun)",
         amount=amount_tiyin
     )]
     
@@ -256,7 +250,7 @@ async def successful_payment(message: types.Message):
     if plan_code:
         plan = license_db.get_plan_by_code(plan_code)
         if plan:
-            days = get_plan_attr(plan, 'days', 0)
+            days = plan.days
             is_trial = (plan_code == "trial")
         else:
             days = 30
@@ -411,3 +405,41 @@ def register_license_handlers(dp: Dispatcher):
 
 # Import datetime (faylning yuqori qismida qo'shish kerak)
 from datetime import datetime
+
+# YANGILANGAN REGISTRATSIYA FUNKSIYASI
+def register_license_handlers_fixed(dp: Dispatcher):
+    """License handlerlarni to'g'ri tartibda ro'yxatdan o'tkazish"""
+    
+    # Tugmalar (state yoq - yuqori prioritet)
+    dp.register_message_handler(
+        handle_get_license,
+        lambda m: m.text == "🎁 Litsenziya olish",
+        state=None  # Faqat state yo'q bo'lganda
+    )
+    
+    dp.register_message_handler(
+        handle_my_licenses,
+        lambda m: m.text == "📜 Mening litsenziyalarim",
+        state=None  # Faqat state yo'q bo'lganda
+    )
+    
+    # FSM States (pastroq prioritet)
+    dp.register_message_handler(
+        process_account,
+        state=LicenseStates.waiting_account
+    )
+    
+    dp.register_message_handler(
+        process_terms,
+        state=LicenseStates.waiting_terms
+    )
+    
+    dp.register_message_handler(
+        process_plan,
+        state=LicenseStates.waiting_plan
+    )
+    
+    dp.register_message_handler(
+        process_confirm,
+        state=LicenseStates.waiting_confirm
+    )

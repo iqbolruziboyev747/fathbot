@@ -13,12 +13,12 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 import config
 
-# Handlers
+# Handlers - MUHIM: Import tartibiga e'tibor bering!
 from handlers.start_handler import register_start_handlers
-from handlers.trading_handler import register_trading_handlers
-from handlers.license_handler import register_license_handlers
 from handlers.admin_handler import register_admin_handlers
+from handlers.trading_handler import register_trading_handlers
 from handlers.premium_handler import register_premium_handlers
+from handlers.license_handler import register_license_handlers
 
 # Logging
 logging.basicConfig(
@@ -31,7 +31,13 @@ bot = Bot(token=config.BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-# Barcha handlerlarni ro'yxatdan o'tkazish
+# MUHIM: Handlerlarni TO'G'RI TARTIBDA ro'yxatdan o'tkazish
+# 1. Start handlers - eng birinchi (commands va asosiy menyu)
+# 2. Admin handlers
+# 3. Trading handlers
+# 4. Premium handlers
+# 5. License handlers - eng oxirida
+
 register_start_handlers(dp)
 register_admin_handlers(dp)
 register_trading_handlers(dp)
@@ -46,20 +52,8 @@ async def on_startup(dp):
     print("="*50)
     print(f"📊 Bot Token: {config.BOT_TOKEN[:20]}...")
     print(f"👑 Adminlar: {config.ADMINS}")
-    
-    if config.USE_FIRESTORE:
-        print(f"🔥 Database: Firebase Firestore")
-        # Default pricing plans ni yaratish
-        try:
-            from database.firestore_service import firestore_license_db
-            firestore_license_db.init_default_plans()
-            print("✅ Default pricing plans yaratildi")
-        except Exception as e:
-            print(f"⚠️ Pricing plans yaratishda xatolik: {e}")
-    else:
-        print(f"🗄️ Trading DB: {config.TRADING_DB_PATH}")
-        print(f"🗄️ License DB: {config.LICENSE_DB_PATH}")
-    
+    print(f"🗄️ Trading DB: {config.TRADING_DB_PATH}")
+    print(f"🗄️ License DB: {config.LICENSE_DB_PATH}")
     print("="*50 + "\n")
 
 

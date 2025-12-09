@@ -7,23 +7,26 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from aiogram import types
-from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher import Dispatcher, FSMContext
 
 import config
 from keyboards import get_main_menu
 from services.database_service import trading_db
 from services.vip_sync_service import vip_sync
 from services.referral_service import referral_service
-from services.helpers import get_user_attr, get_datetime_from_obj
 
 
-async def cmd_start(message: types.Message):
+async def cmd_start(message: types.Message, state: FSMContext):
     """
     /start buyrug'i
+    - Har qanday state ni to'xtatish
     - Referral kodini tekshirish
     - Foydalanuvchini yaratish
     - VIP statusni sinxronlashtirish
     """
+    # AVVAL state ni to'xtatish
+    await state.finish()
+    
     user_id = message.from_user.id
     username = message.from_user.username
     first_name = message.from_user.first_name
@@ -73,9 +76,8 @@ async def cmd_start(message: types.Message):
     
     if is_vip:
         welcome_text += f"⭐ *Sizning statusingiz:* VIP\n"
-        vip_until = get_datetime_from_obj(user, 'vip_until')
-        if vip_until:
-            welcome_text += f"📅 *Muddat:* {vip_until.strftime('%Y-%m-%d')} gacha\n\n"
+        if user.vip_until:
+            welcome_text += f"📅 *Muddat:* {user.vip_until.strftime('%Y-%m-%d')} gacha\n\n"
         welcome_text += (
             "🎁 *VIP imkoniyatlari:*\n"
             " • ♾️ Cheksiz tahlil so'rovlari\n"
@@ -84,10 +86,9 @@ async def cmd_start(message: types.Message):
             " • ⚡ Tezkor javoblar\n\n"
         )
     else:
-        request_count = get_user_attr(user, 'request_count', 0)
         welcome_text += (
             f"📊 *Sizning statusingiz:* Oddiy foydalanuvchi\n"
-            f"📢 *Bepul so'rovlar:* {config.FREE_REQUEST_LIMIT - request_count}/{config.FREE_REQUEST_LIMIT}\n\n"
+            f"📢 *Bepul so'rovlar:* {config.FREE_REQUEST_LIMIT - user.request_count}/{config.FREE_REQUEST_LIMIT}\n\n"
             "💡 *VIP bo'lish uchun:*\n"
             " • Litsenziya sotib oling\n"
             " • Cheksiz tahlillardan foydalaning\n"
@@ -103,7 +104,7 @@ async def cmd_start(message: types.Message):
                 photo=photo,
                 caption=welcome_text,
                 parse_mode="Markdown",
-                reply_markup=get_main_menu(is_vip, get_datetime_from_obj(user, 'vip_until'))
+                reply_markup=get_main_menu(is_vip, user.vip_until if user else None)
             )
     except:
         await message.answer(
@@ -113,8 +114,11 @@ async def cmd_start(message: types.Message):
         )
 
 
-async def cmd_admin(message: types.Message):
+async def cmd_admin(message: types.Message, state: FSMContext):
     """Admin panel"""
+    # State ni to'xtatish
+    await state.finish()
+    
     user_id = message.from_user.id
     
     if user_id not in config.ADMINS:
@@ -132,8 +136,11 @@ async def cmd_admin(message: types.Message):
     )
 
 
-async def handle_back_to_menu(message: types.Message):
-    """Asosiy menyuga qaytish"""
+async def handle_back_to_menu(message: types.Message, state: FSMContext):
+    """Asosiy menyuga qaytish - HAR QANDAY STATE DAN"""
+    # AVVAL state ni to'xtatish
+    await state.finish()
+    
     user_id = message.from_user.id
     
     # VIP statusni tekshirish
@@ -146,8 +153,11 @@ async def handle_back_to_menu(message: types.Message):
     )
 
 
-async def handle_help(message: types.Message):
+async def handle_help(message: types.Message, state: FSMContext):
     """Yordam bo'limi"""
+    # State mavjud bo'lsa to'xtatish
+    await state.finish()
+    
     help_text = (
         "❓ *YORDAM BO'LIMI*\n\n"
         "📌 Quyidagi bo'limlardan foydalanishingiz mumkin:\n\n"
@@ -166,8 +176,11 @@ async def handle_help(message: types.Message):
     await message.answer(help_text, parse_mode="Markdown")
 
 
-async def handle_about_fath(message: types.Message):
+async def handle_about_fath(message: types.Message, state: FSMContext):
     """FATH haqida"""
+    # State ni to'xtatish
+    await state.finish()
+    
     about_text = (
         "🤖 *FATH Robot* – Sizning shaxsiy treyding yordamchingiz! 💹\n\n"
         "📊 Robot bozorni *Gann strategiyasi* asosida tahlil qiladi.\n"
@@ -200,105 +213,11 @@ async def handle_about_fath(message: types.Message):
         pass
 
 
-async def handle_setup_guide(message: types.Message):
-    """O'rnatish qo'llanma"""
-    guide_text = (
-        "⚙️ *FATH Robotni o'rnatish bo'yicha qo'llanma:*\n\n"
-        "1️⃣ MetaTrader 5 ni yuklab oling\n"
-        "   📥 https://www.metatrader5.com\n\n"
-        "2️⃣ Bot sizga yuborgan `FATH.ex5` faylini:\n"
-        "   ➡️ MT5: *File → Open Data Folder*\n"
-        "   ➡️ *MQL5 → Experts* papkasiga joylashtiring\n\n"
-        "3️⃣ MT5 ni qayta ishga tushiring\n\n"
-        "4️⃣ *Navigator → Expert Advisors → FATH*\n"
-        "   Grafikka tashlang\n\n"
-        "5️⃣ Sozlamalar:\n"
-        "   🔑 *License Token* – botdan olingan kod\n"
-        "   📈 *LotSize* – boshlang'ich lot (0.01)\n\n"
-        "6️⃣ *Tools → Options → Expert Advisors*\n"
-        "   ✅ Allow Algo Trading\n"
-        "   ✅ Allow WebRequest\n\n"
-        "7️⃣ *AutoTrading* tugmasi yashil bo'lishi kerak\n\n"
-        "🎉 Tayyor! FATH avtomatik ishlay boshlaydi!\n\n"
-        "ℹ️ Yordam kerak bo'lsa: +998930012284"
-    )
-    
-    await message.answer(guide_text, parse_mode="Markdown")
-    
-    # Video qo'llanma
-    try:
-        with open("fath_setup.mp4", "rb") as video:
-            await message.answer_video(
-                video=video,
-                caption="🎥 Video qo'llanma: FATH robotni o'rnatish"
-            )
-    except:
-        pass
-
-
-async def handle_terms(message: types.Message):
-    """Foydalanish shartnomasi"""
-    terms_text = (
-        "📜 *FOYDALANISH SHARTNOMASI*\n\n"
-        "Ushbu hujjat FATH robotidan foydalanish tartibini belgilaydi.\n\n"
-        "📹 *1️⃣ Umumiy qoidalar*\n"
-        "• FATH robotini sotib olish orqali Siz ushbu shartlarga rozi bo'lasiz.\n"
-        "• Robotni uchinchi shaxslarga sotish yoki tarqatish taqiqlanadi.\n\n"
-        "📹 *2️⃣ Foydalanuvchi huquqlari*\n"
-        "• Robotdan shaxsiy va tijorat maqsadida foydalanish.\n"
-        "• Yangilanishlarni bepul olish.\n\n"
-        "📹 *3️⃣ Risk va javobgarlik*\n"
-        "• Forex savdosi yuqori riskli faoliyat.\n"
-        "• Robot foyda kafolatlamaydi.\n"
-        "• Foydalanuvchi o'z qarorlari uchun javobgar.\n\n"
-        "✅ Bu shartnoma foydalanuvchi va ishlab chiquvchi o'rtasidagi huquq va majburiyatlarni tartibga soladi."
-    )
-    
-    await message.answer(terms_text, parse_mode="Markdown")
-    
-    # PDF guvohnoma
-    try:
-        with open("guvohnoma.pdf", "rb") as doc:
-            await message.answer_document(
-                document=doc,
-                caption="📄 FATH robotini sotish uchun rasmiy guvohnoma"
-            )
-    except:
-        pass
-
-
-def register_start_handlers(dp: Dispatcher):
-    """Start handlerlarni ro'yxatdan o'tkazish"""
-    dp.register_message_handler(cmd_start, commands=["start"])
-    dp.register_message_handler(cmd_admin, commands=["admin"])
-    
-    # Tugmalar
-    dp.register_message_handler(
-        handle_back_to_menu, 
-        lambda m: m.text and "Asosiy Menyu" in m.text,  # ← YANGI
-        state="*"  # ← YANGI
-    )
-    dp.register_message_handler(handle_help, lambda m: m.text == "❓ Yordam")
-    dp.register_message_handler(handle_about_fath, lambda m: m.text == "🤖 FATH haqida")
-    dp.register_message_handler(handle_setup_guide, lambda m: m.text == "⚙️ O'rnatish qo'llanma")
-    dp.register_message_handler(handle_terms, lambda m: m.text == "📜 Foydalanish shartnomasi")
-    dp.register_message_handler(handle_referral, lambda m: m.text == "🤝 Referral")
-
-async def handle_back_to_menu(message: types.Message):
-    """Asosiy menyuga qaytish - ISTALGAN JOYDAN"""
-    user_id = message.from_user.id
-    
-    # VIP statusni tekshirish
-    is_vip, _, _ = await vip_sync.check_vip_and_notify(user_id)
-    user = trading_db.get_user(user_id)
-    
-    await message.answer(
-        "🏠 Asosiy menyu",
-        reply_markup=get_main_menu(is_vip, user.vip_until if user else None)
-    )
-
-async def handle_referral(message: types.Message):
+async def handle_referral(message: types.Message, state: FSMContext):
     """Referral tugmasi"""
+    # State ni to'xtatish
+    await state.finish()
+    
     user_id = message.from_user.id
     
     # Referral kodni olish
@@ -329,3 +248,23 @@ async def handle_referral(message: types.Message):
     )
     
     await message.answer(text, parse_mode="Markdown")
+
+
+def register_start_handlers(dp: Dispatcher):
+    """Start handlerlarni ro'yxatdan o'tkazish"""
+    
+    # Commands - ENG BIRINCHI
+    dp.register_message_handler(cmd_start, commands=["start"], state="*")
+    dp.register_message_handler(cmd_admin, commands=["admin"], state="*")
+    
+    # Asosiy menyu - HAR QANDAY STATE DAN (ENG YUQORI PRIORITET)
+    dp.register_message_handler(
+        handle_back_to_menu, 
+        lambda m: m.text and ("🔙 Asosiy Menyu" in m.text or "Asosiy Menyu" in m.text),
+        state="*"
+    )
+    
+    # Oddiy tugmalar (state yoq)
+    dp.register_message_handler(handle_help, lambda m: m.text == "❓ Yordam", state=None)
+    dp.register_message_handler(handle_about_fath, lambda m: m.text == "🤖 FATH haqida", state=None)
+    dp.register_message_handler(handle_referral, lambda m: m.text == "🤝 Referral", state=None)

@@ -20,7 +20,6 @@ from keyboards import (
     get_main_menu
 )
 from services.database_service import trading_db, license_db
-from services.helpers import get_user_attr, get_plan_attr, get_license_attr, get_datetime_from_obj
 
 
 # FSM States
@@ -43,6 +42,7 @@ class AdminStates(StatesGroup):
     
     # Litsenziya qo'shish
     waiting_license_account = State()
+    waiting_telegram_id = State()     
     waiting_license_days = State()
 
     # Premium strategiyalar
@@ -378,18 +378,17 @@ async def handle_statistics(message: types.Message):
     from datetime import datetime
     active_vip = len([u for u in users if u.is_vip and u.vip_until and u.vip_until > datetime.now()])
     
-    blocked_users = len([u for u in users if get_user_attr(u, 'request_count', 0) >= config.FREE_REQUEST_LIMIT and not get_user_attr(u, 'is_vip', False)])
-    total_requests = sum([get_user_attr(u, 'request_count', 0) for u in users])
+    blocked_users = len([u for u in users if u.request_count >= config.FREE_REQUEST_LIMIT and not u.is_vip])
+    total_requests = sum([u.request_count for u in users])
     
     # License statistika
     all_licenses = []
     for user in users:
-        user_id = get_user_attr(user, 'user_id')
-        user_licenses = license_db.get_all_licenses(user_id)
+        user_licenses = license_db.get_all_licenses(user.user_id)
         all_licenses.extend(user_licenses)
     
     total_licenses = len(all_licenses)
-    active_licenses = len([l for l in all_licenses if not get_license_attr(l, 'revoked', False) and get_datetime_from_obj(l, 'valid_until') and get_datetime_from_obj(l, 'valid_until') > datetime.now()])
+    active_licenses = len([l for l in all_licenses if not l.revoked and l.valid_until > datetime.now()])
     
     response = (
         "📊 *STATISTIKA*\n\n"
@@ -418,21 +417,17 @@ async def handle_users_list(message: types.Message):
     response = "👥 FOYDALANUVCHILAR (birinchi 15 ta):\n\n"
     
     for i, user in enumerate(users[:15], 1):
-        is_vip = get_user_attr(user, 'is_vip', False)
-        request_count = get_user_attr(user, 'request_count', 0)
-        user_id = get_user_attr(user, 'user_id')
-        
-        vip_status = "⭐ VIP" if is_vip else "👤 Oddiy"
-        status = "✅ Faol" if request_count < config.FREE_REQUEST_LIMIT or is_vip else "❌ Limit tugagan"
+        vip_status = "⭐ VIP" if user.is_vip else "👤 Oddiy"
+        status = "✅ Faol" if user.request_count < config.FREE_REQUEST_LIMIT or user.is_vip else "❌ Limit tugagan"
         
         # Username ni escape qilish (Markdown uchun)
-        username = get_user_attr(user, 'username') or "username_yoq"
-        first_name = get_user_attr(user, 'first_name') or "Ism_yoq"
+        username = user.username if user.username else "username_yoq"
+        first_name = user.first_name if user.first_name else "Ism_yoq"
         
         response += f"{i}. {first_name} (@{username})\n"
         response += f"   {vip_status} | {status}\n"
-        response += f"   So'rovlar: {request_count}/{config.FREE_REQUEST_LIMIT}\n"
-        response += f"   ID: {user_id}\n\n"
+        response += f"   So'rovlar: {user.request_count}/{config.FREE_REQUEST_LIMIT}\n"
+        response += f"   ID: {user.user_id}\n\n"
     
     # Markdown ni o'chirish
     await message.answer(response)
@@ -475,12 +470,33 @@ async def process_vip_add(message: types.Message, state: FSMContext):
         from datetime import datetime, timedelta
         vip_until = datetime.now() + timedelta(days=365)
         
+        # 1. Trading DB ga yozish
         success = trading_db.set_vip_status(user_id, is_vip=True, vip_until=vip_until)
         
         if success:
+            # 2. Request count ni 0 ga qaytarish
+            trading_db.reset_request_count(user_id)
+            
+            # 3. ⭐ License DB ga ham litsenziya qo'shish (MUHIM!)
+            try:
+                # Agar foydalanuvchi avval litsenziya olgan bo'lsa, yangilaymiz
+                # Aks holda yangi litsenziya yaratamiz
+                license_db.create_license(
+                    user_id=user_id,
+                    account_number="ADMIN_VIP",
+                    plan_name="VIP_ADMIN",
+                    amount=0,
+                    duration_days=365
+                )
+            except Exception as e:
+                print(f"⚠️ License yaratishda xatolik: {e}")
+                # Bu xatolik bo'lsa ham davom etadi, chunki trading_db da VIP berilgan
+            
             await message.answer(
                 f"✅ User {user_id} ga VIP status berildi!\n"
-                f"📅 Muddat: {vip_until.strftime('%Y-%m-%d')} gacha",
+                f"📅 Muddat: {vip_until.strftime('%Y-%m-%d')} gacha\n"
+                f"🔄 Request count reset qilindi\n"
+                f"💾 License DB ga yozildi",
                 reply_markup=get_admin_menu()
             )
             
@@ -765,18 +781,12 @@ async def handle_pricing_menu(message: types.Message):
     response = "💵 *TARIF NARXLARI*\n\n"
     
     for plan in plans:
-        is_active = get_plan_attr(plan, 'is_active', True)
-        price = get_plan_attr(plan, 'price', 0)
-        name = get_plan_attr(plan, 'name', 'Noma\'lum')
-        days = get_plan_attr(plan, 'days', 0)
-        plan_code = get_plan_attr(plan, 'plan_code', '')
+        status = "✅" if plan.is_active else "❌"
+        price_text = "BEPUL" if plan.price == 0 else f"{plan.price:,} so'm"
         
-        status = "✅" if is_active else "❌"
-        price_text = "BEPUL" if price == 0 else f"{price:,} so'm"
-        
-        response += f"{status} *{name}* ({days} kun)\n"
+        response += f"{status} *{plan.name}* ({plan.days} kun)\n"
         response += f"   💵 Narx: {price_text}\n"
-        response += f"   🔑 Kod: `{plan_code}`\n\n"
+        response += f"   🔑 Kod: `{plan.plan_code}`\n\n"
     
     kb = InlineKeyboardMarkup()
     kb.add(InlineKeyboardButton("✏️ Narxni o'zgartirish", callback_data="edit_pricing"))
@@ -805,6 +815,29 @@ async def process_license_account(message: types.Message, state: FSMContext):
         return
     
     await state.update_data(account=account)
+    await message.answer(
+        "👤 *Foydalanuvchi Telegram ID sini kiriting:*\n\n"
+        "Agar ID noma'lum bo'lsa, 0 yozing yoki o'tkazib yuboring.",
+        parse_mode="Markdown"
+    )
+    await AdminStates.waiting_telegram_id.set()  # Yangi state qo'shamiz
+
+
+async def process_telegram_id(message: types.Message, state: FSMContext):
+    """Telegram ID ni qabul qilish"""
+    telegram_id = message.text.strip()
+    
+    # Agar 0 yoki bo'sh bo'lsa, None qilamiz
+    if telegram_id in ['0', '']:
+        telegram_id = None
+    else:
+        try:
+            telegram_id = int(telegram_id)
+        except ValueError:
+            await message.answer("❌ Noto'g'ri ID! Faqat raqam kiriting yoki 0 ni bosing.")
+            return
+    
+    await state.update_data(telegram_id=telegram_id)
     await message.answer("📅 Necha kunlik litsenziya? (7, 30, 90, 180, 365, 1095)")
     await AdminStates.waiting_license_days.set()
 
@@ -815,13 +848,14 @@ async def process_license_days(message: types.Message, state: FSMContext):
         days = int(message.text.strip())
         data = await state.get_data()
         account = data['account']
+        telegram_id = data.get('telegram_id')  # None bo'lishi mumkin
         
         # Tarifni aniqlash
         plan_code = "trial" if days == 7 else f"{days}d"
         
         license_obj, error = license_db.create_license(
             account_number=account,
-            telegram_id=None,
+            telegram_id=telegram_id,  # Endi Telegram ID ham yoziladi
             plan_code=plan_code,
             days=days,
             is_trial=(days == 7)
@@ -830,11 +864,22 @@ async def process_license_days(message: types.Message, state: FSMContext):
         if error:
             await message.answer(f"❌ Xato: {error}")
         else:
-            await message.answer(
+            # Xabarni tayyorlash
+            response = (
                 f"✅ Litsenziya yaratildi!\n\n"
                 f"🔑 Token: `{license_obj.token}`\n"
                 f"💳 Account: {account}\n"
-                f"📅 Muddat: {days} kun",
+                f"📅 Muddat: {days} kun\n"
+            )
+            
+            # Agar Telegram ID bo'lsa, qo'shamiz
+            if telegram_id:
+                response += f"👤 Telegram ID: {telegram_id}"
+            else:
+                response += "👤 Telegram ID: ❌ Yo'q (admin tomonidan yaratildi)"
+            
+            await message.answer(
+                response,
                 parse_mode="Markdown",
                 reply_markup=get_admin_menu()
             )
@@ -843,7 +888,6 @@ async def process_license_days(message: types.Message, state: FSMContext):
         
     except ValueError:
         await message.answer("❌ Faqat raqam kiriting!")
-
 
 def register_admin_handlers(dp: Dispatcher):
     """Admin handlerlarni ro'yxatdan o'tkazish"""
@@ -976,6 +1020,11 @@ def register_admin_handlers(dp: Dispatcher):
     dp.register_message_handler(
         process_license_account,
         state=AdminStates.waiting_license_account
+    )
+
+    dp.register_message_handler(
+        process_telegram_id,  # <- YANGI HANDLER
+        state=AdminStates.waiting_telegram_id
     )
     
     dp.register_message_handler(
@@ -1282,12 +1331,9 @@ async def callback_edit_pricing(callback_query: types.CallbackQuery):
     
     kb = types.InlineKeyboardMarkup()
     for plan in plans:
-        name = get_plan_attr(plan, 'name', 'Noma\'lum')
-        price = get_plan_attr(plan, 'price', 0)
-        plan_code = get_plan_attr(plan, 'plan_code', '')
         kb.add(types.InlineKeyboardButton(
-            f"{name} - {price:,} so'm",
-            callback_data=f"edit_plan_{plan_code}"
+            f"{plan.name} - {plan.price:,} so'm",
+            callback_data=f"edit_plan_{plan.plan_code}"
         ))
     
     await callback_query.message.edit_text(
@@ -1309,13 +1355,10 @@ async def callback_toggle_plan(callback_query: types.CallbackQuery):
     
     kb = types.InlineKeyboardMarkup()
     for plan in plans:
-        is_active = get_plan_attr(plan, 'is_active', True)
-        name = get_plan_attr(plan, 'name', 'Noma\'lum')
-        plan_code = get_plan_attr(plan, 'plan_code', '')
-        status = "✅" if is_active else "❌"
+        status = "✅" if plan.is_active else "❌"
         kb.add(types.InlineKeyboardButton(
-            f"{status} {name}",
-            callback_data=f"toggle_{plan_code}"
+            f"{status} {plan.name}",
+            callback_data=f"toggle_{plan.plan_code}"
         ))
     
     await callback_query.message.edit_text(
@@ -1341,11 +1384,9 @@ async def callback_edit_plan_price(callback_query: types.CallbackQuery, state: F
     await state.update_data(editing_plan=plan_code)
     await AdminStates.waiting_new_price.set()
     
-    plan_name = get_plan_attr(plan, 'name', 'Noma\'lum')
-    plan_price = get_plan_attr(plan, 'price', 0)
     await callback_query.message.answer(
-        f"📝 *{plan_name}* uchun yangi narxni kiriting (so'mda):\n\n"
-        f"Hozirgi narx: {plan_price:,} so'm",
+        f"📝 *{plan.name}* uchun yangi narxni kiriting (so'mda):\n\n"
+        f"Hozirgi narx: {plan.price:,} so'm",
         parse_mode="Markdown"
     )
     await callback_query.answer()

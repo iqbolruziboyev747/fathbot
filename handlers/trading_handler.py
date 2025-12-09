@@ -19,7 +19,6 @@ from keyboards import (
 from services.database_service import trading_db
 from services.vip_sync_service import vip_sync
 from services.analyzer_service import analyzer
-from services.helpers import get_user_attr, get_datetime_from_obj
 
 
 # FSM States
@@ -31,6 +30,9 @@ class TradingStates(StatesGroup):
 
 async def handle_technical_analysis(message: types.Message, state: FSMContext):
     """Texnik tahlil tugmasi bosilganda"""
+    # AVVAL state ni tozalash
+    await state.finish()
+    
     user_id = message.from_user.id
     
     # VIP va limit tekshirish
@@ -65,23 +67,34 @@ async def handle_technical_image(message: types.Message, state: FSMContext):
     """Texnik tahlil uchun rasm qabul qilish"""
     user_id = message.from_user.id
 
-    # Agar "Asosiy Menyu" bosilsa
-    if message.text and "Asosiy Menyu" in message.text:
+    # Agar "Asosiy Menyu" bosilsa - start_handler boshqaradi
+    # Lekin agar kelgan bo'lsa, bu yerda ham qayta ishlaymiz
+    if message.text and ("Asosiy Menyu" in message.text or "🔙" in message.text):
         await state.finish()
         
-        user_id = message.from_user.id
         is_vip, _, _ = await vip_sync.check_vip_and_notify(user_id)
         user = trading_db.get_user(user_id)
         
         await message.answer(
             "🏠 Asosiy menyu",
-            reply_markup=get_main_menu(is_vip, get_datetime_from_obj(user, 'vip_until'))
+            reply_markup=get_main_menu(is_vip, user.vip_until if user else None)
+        )
+        return
+    
+    # "Yangi tahlil" tugmasi
+    if message.text and "Yangi tahlil" in message.text:
+        # State ni finish qilmasdan, faqat qayta boshlash
+        await message.answer(
+            "📊 *TEXNIK TAHLIL*\n\n"
+            "📸 Iltimos, yangi grafik rasmini yuboring...",
+            parse_mode="Markdown",
+            reply_markup=get_technical_keyboard()
         )
         return
     
     # Rasm tekshirish
     if not message.photo:
-        await message.answer("❌ Iltimos, rasm yuboring!")
+        await message.answer("❌ Iltimos, grafik rasmini yuboring!")
         return
     
     # Yana bir marta limit tekshirish (xavfsizlik)
@@ -105,7 +118,7 @@ async def handle_technical_image(message: types.Message, state: FSMContext):
         progress_msg = await message.answer("🔍 Tahlil boshlandi...")
         
         # AI tahlil
-        analysis_result = await analyzer.analyze_price_action(image_path)
+        analysis_result = await analyzer.analyze_price_action(image_path, user_id)
         
         # So'rov sonini oshirish (faqat VIP bo'lmasa)
         if not is_vip:
@@ -124,8 +137,7 @@ async def handle_technical_image(message: types.Message, state: FSMContext):
         
         # Yangilangan limit
         user = trading_db.get_user(user_id)
-        request_count = get_user_attr(user, 'request_count', 0)
-        remaining = max(0, config.FREE_REQUEST_LIMIT - request_count)
+        remaining = max(0, config.FREE_REQUEST_LIMIT - user.request_count)
         
         if is_vip:
             final_msg = "✅ Tahlil yakunlandi!\n⭐ VIP - cheksiz so'rovlar"
@@ -137,6 +149,7 @@ async def handle_technical_image(message: types.Message, state: FSMContext):
             reply_markup=get_after_analysis_keyboard()
         )
         
+        # State ni to'xtatish
         await state.finish()
         
     except Exception as e:
@@ -146,6 +159,9 @@ async def handle_technical_image(message: types.Message, state: FSMContext):
 
 async def handle_fundamental_analysis(message: types.Message, state: FSMContext):
     """Fundamental tahlil tugmasi bosilganda"""
+    # State ni tozalash
+    await state.finish()
+    
     user_id = message.from_user.id
     
     # VIP va limit tekshirish
@@ -179,17 +195,16 @@ async def handle_fundamental_choice(message: types.Message, state: FSMContext):
     
     # AVVAL state ni finish qilish kerak!
     if "🔙 Asosiy Menyu" in text or "Asosiy Menyu" in text:
-        await state.finish()  # ← State ni to'xtatish
+        await state.finish()
         
-        # Keyin menu
         is_vip, _, _ = await vip_sync.check_vip_and_notify(user_id)
         user = trading_db.get_user(user_id)
         
         await message.answer(
             "🏠 Asosiy menyu",
-            reply_markup=get_main_menu(is_vip, get_datetime_from_obj(user, 'vip_until'))
+            reply_markup=get_main_menu(is_vip, user.vip_until if user else None)
         )
-        return  # ← Funksiyani to'xtatish
+        return
     
     # Symbol aniqlash
     symbol = None
@@ -255,6 +270,9 @@ async def handle_fundamental_choice(message: types.Message, state: FSMContext):
 
 async def handle_pro_analysis(message: types.Message, state: FSMContext):
     """Pro tahlil tugmasi bosilganda"""
+    # State ni tozalash
+    await state.finish()
+    
     user_id = message.from_user.id
     
     # VIP tekshirish (Pro faqat VIP uchun!)
@@ -295,6 +313,24 @@ async def handle_pro_analysis(message: types.Message, state: FSMContext):
 async def handle_pro_images(message: types.Message, state: FSMContext):
     """Pro tahlil uchun rasmlar qabul qilish"""
     user_id = message.from_user.id
+    
+    # Asosiy menyuga qaytish
+    if message.text and ("🔙 Asosiy Menyu" in message.text or "Asosiy Menyu" in message.text):
+        await state.finish()
+        
+        is_vip, _, _ = await vip_sync.check_vip_and_notify(user_id)
+        user = trading_db.get_user(user_id)
+        
+        await message.answer(
+            "🏠 Asosiy menyu",
+            reply_markup=get_main_menu(is_vip, user.vip_until if user else None)
+        )
+        return
+    
+    # Rasm tekshirish
+    if not message.photo:
+        await message.answer("❌ Iltimos, grafik rasmini yuboring!")
+        return
     
     # VIP tekshirish
     is_vip, _, _ = await vip_sync.check_vip_and_notify(user_id)
@@ -350,8 +386,11 @@ async def handle_pro_images(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-async def handle_insider_news(message: types.Message):
+async def handle_insider_news(message: types.Message, state: FSMContext):
     """Insider yangiliklar (VIP uchun)"""
+    # State ni to'xtatish
+    await state.finish()
+    
     user_id = message.from_user.id
     
     # VIP tekshirish
@@ -393,35 +432,41 @@ async def handle_insider_news(message: types.Message):
 def register_trading_handlers(dp: Dispatcher):
     """Trading handlerlarni ro'yxatdan o'tkazish"""
     
-    # Tugmalar
+    # Tugmalar (state yoq - eng yuqori prioritet)
     dp.register_message_handler(
         handle_technical_analysis,
         lambda m: m.text == "📊 Texnik Tahlil",
-        state="*"
+        state=None
     )
     
     dp.register_message_handler(
         handle_fundamental_analysis,
         lambda m: m.text == "💼 Fundamental Tahlil",
-        state="*"
+        state=None
     )
     
     dp.register_message_handler(
         handle_pro_analysis,
         lambda m: m.text == "🔍 Pro Tahlil",
-        state="*"
+        state=None
     )
     
     dp.register_message_handler(
         handle_insider_news,
         lambda m: m.text == "📰 Insider News",
-        state="*"
+        state=None
     )
     
-    # FSM States
+    # FSM States (pastroq prioritet)
     dp.register_message_handler(
         handle_technical_image,
         content_types=types.ContentType.PHOTO,
+        state=TradingStates.waiting_technical_image
+    )
+    
+    dp.register_message_handler(
+        handle_technical_image,
+        lambda m: m.text and "Yangi tahlil" in m.text,
         state=TradingStates.waiting_technical_image
     )
     
